@@ -3,7 +3,7 @@ from transact import TransAct
 from transact_config import TransActConfig
 
 
-def test_run_transact():
+def test_run_transact(device='cpu'):
     action_vocab = list(range(0, 20))
     full_seq_len = 100
     test_batch_size = 8
@@ -12,11 +12,19 @@ def test_run_transact():
     time_window_ms = 1000 * 60 * 60 * 1  # 1 hr
     latest_n_emb = 10
 
-    action_type_seq = torch.randint(0, 20, (test_batch_size, full_seq_len))
-    item_embedding_seq = torch.rand(test_batch_size, full_seq_len, item_emb_dim)
-    action_time_seq = torch.randint(0, 20, (test_batch_size, full_seq_len))
-    request_time = torch.randint(500, 1000, (test_batch_size,))
-    item_embedding = torch.rand(test_batch_size, item_emb_dim)
+    if device == 'xla':
+        import torch_xla
+    elif device == 'jax':
+        import torchax
+        torchax.enable_globally()
+
+
+
+    action_type_seq = torch.randint(0, 20, (test_batch_size, full_seq_len), device=device)
+    item_embedding_seq = torch.rand(test_batch_size, full_seq_len, item_emb_dim, device=device)
+    action_time_seq = torch.randint(0, 20, (test_batch_size, full_seq_len), device=device)
+    request_time = torch.randint(500, 1000, (test_batch_size,), device=device)
+    item_embedding = torch.rand(test_batch_size, item_emb_dim, device=device)
     input_features = (
         action_type_seq,
         item_embedding_seq,
@@ -35,7 +43,7 @@ def test_run_transact():
         latest_n_emb=latest_n_emb,
     )
 
-    transact_module = TransAct(transact_config)
+    transact_module = TransAct(transact_config).to(device)
 
     print("Test forward pass")
     output = transact_module(*input_features)
@@ -43,4 +51,6 @@ def test_run_transact():
     print("Test succeeded")
 
 
-test_run_transact()
+if __name__ == '__main__':
+    import fire
+    fire.Fire(test_run_transact)
