@@ -3,7 +3,7 @@ from transact import TransAct
 from transact_config import TransActConfig
 
 
-def test_run_transact(use_xla=False):
+def test_run_transact(device='cpu'):
     action_vocab = list(range(0, 20))
     full_seq_len = 100
     test_batch_size = 8
@@ -12,11 +12,11 @@ def test_run_transact(use_xla=False):
     time_window_ms = 1000 * 60 * 60 * 1  # 1 hr
     latest_n_emb = 10
 
-    if use_xla:
+    if device == 'xla':
         import torch_xla
-        device = 'xla'
-    else:
-        device = 'cpu'
+    elif device == 'jax':
+        import torchax
+        torchax.enable_globally()
 
 
 
